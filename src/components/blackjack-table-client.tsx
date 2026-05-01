@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BlackjackTableState } from "@/lib/blackjack-types";
 import { useWallet } from "@/lib/client/use-wallet";
+import { useAuth } from "@/lib/client/auth-context";
 
 interface BlackjackTableClientProps {
   roomCode: string;
@@ -33,13 +34,14 @@ function getPlayerName(): string {
 }
 
 export function BlackjackTableClient({ roomCode }: BlackjackTableClientProps) {
+  const { user } = useAuth();
   const [state, setState] = useState<BlackjackTableState | null>(null);
   const [error, setError] = useState("");
   const [betAmount, setBetAmount] = useState(50);
   const [loading, setLoading] = useState(true);
   const [sessionId, setSessionId] = useState("");
   const [playerName, setPlayerName] = useState("");
-  const wallet = useWallet(sessionId);
+  const wallet = useWallet(user?.id || sessionId);
   const router = useRouter();
 
   // Initialize session and player info
@@ -67,18 +69,27 @@ export function BlackjackTableClient({ roomCode }: BlackjackTableClientProps) {
         });
 
         if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || "Failed to join table");
+          let errorMessage = "Failed to join table";
+          try {
+            const data = await response.json();
+            errorMessage = data.error || errorMessage;
+          } catch {
+            errorMessage = `Server error: ${response.status} ${response.statusText}`;
+          }
+          throw new Error(errorMessage);
         }
 
         const data = await response.json();
-        if (mounted) {
+        if (mounted && data.state) {
           setState(data.state);
           setError("");
           setLoading(false);
+        } else if (mounted) {
+          throw new Error("Invalid response from server");
         }
       } catch (err) {
         if (mounted) {
+          console.error("Join error:", err);
           setError(err instanceof Error ? err.message : "Error joining table");
           setLoading(false);
         }
