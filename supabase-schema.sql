@@ -117,10 +117,10 @@ BEGIN
       AND TABLENAME = 'user_wallets'
       AND POLICYNAME = 'user_wallets_select_own'
   ) THEN
-    CREATE POLICY USER_WALLETS_SELECT_OWN ON PUBLIC.USER_WALLETS FOR
+    CREATE POLICY user_wallets_select_own ON public.user_wallets FOR
     SELECT
       TO AUTHENTICATED
-      USING (AUTH.UID() = USER_ID);
+      USING (auth.uid() = user_id);
   END IF;
 END $$;
 
@@ -136,8 +136,8 @@ BEGIN
       AND TABLENAME = 'user_wallets'
       AND POLICYNAME = 'user_wallets_insert_own'
   ) THEN
-    CREATE POLICY USER_WALLETS_INSERT_OWN ON PUBLIC.USER_WALLETS FOR INSERT TO AUTHENTICATED WITH CHECK (
-      AUTH.UID() = USER_ID
+    CREATE POLICY user_wallets_insert_own ON public.user_wallets FOR INSERT TO AUTHENTICATED WITH CHECK (
+      auth.uid() = user_id
     );
   END IF;
 END $$;
@@ -154,11 +154,11 @@ BEGIN
       AND TABLENAME = 'user_wallets'
       AND POLICYNAME = 'user_wallets_update_own'
   ) THEN
-    CREATE POLICY USER_WALLETS_UPDATE_OWN ON PUBLIC.USER_WALLETS FOR
+    CREATE POLICY user_wallets_update_own ON public.user_wallets FOR
     UPDATE TO AUTHENTICATED USING (
-      AUTH.UID() = USER_ID
+      auth.uid() = user_id
     ) WITH CHECK (
-      AUTH.UID() = USER_ID
+      auth.uid() = user_id
     );
   END IF;
 END $$;
@@ -179,10 +179,10 @@ BEGIN
       AND TABLENAME = 'wallet_transactions'
       AND POLICYNAME = 'wallet_transactions_select_own'
   ) THEN
-    CREATE POLICY WALLET_TRANSACTIONS_SELECT_OWN ON PUBLIC.WALLET_TRANSACTIONS FOR
+    CREATE POLICY wallet_transactions_select_own ON public.wallet_transactions FOR
     SELECT
       TO AUTHENTICATED
-      USING (AUTH.UID() = USER_ID);
+      USING (auth.uid() = user_id);
   END IF;
 END $$;
 
@@ -198,8 +198,8 @@ BEGIN
       AND TABLENAME = 'wallet_transactions'
       AND POLICYNAME = 'wallet_transactions_insert_own'
   ) THEN
-    CREATE POLICY WALLET_TRANSACTIONS_INSERT_OWN ON PUBLIC.WALLET_TRANSACTIONS FOR INSERT TO AUTHENTICATED WITH CHECK (
-      AUTH.UID() = USER_ID
+    CREATE POLICY wallet_transactions_insert_own ON public.wallet_transactions FOR INSERT TO AUTHENTICATED WITH CHECK (
+      auth.uid() = user_id
     );
   END IF;
 END $$;
@@ -221,7 +221,7 @@ BEGIN
       AND TABLENAME = 'user_profiles'
       AND POLICYNAME = 'user_profiles_public_read'
   ) THEN
-    CREATE POLICY USER_PROFILES_PUBLIC_READ ON PUBLIC.USER_PROFILES FOR
+    CREATE POLICY user_profiles_public_read ON public.user_profiles FOR
     SELECT
       TO ANON,
       AUTHENTICATED
