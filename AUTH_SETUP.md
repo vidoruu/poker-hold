@@ -9,6 +9,7 @@ The poker app now includes a complete authentication system powered by Supabase 
 ### 1. Enable Supabase Auth
 
 Go to your Supabase project dashboard:
+
 1. Navigate to **Authentication** → **Providers** in the left sidebar
 2. Make sure **Email** provider is **enabled** (it should be by default)
 3. Click **Enable** if needed
@@ -16,6 +17,7 @@ Go to your Supabase project dashboard:
 ### 2. Configure Email Settings (Optional)
 
 For production, you may want to configure custom SMTP:
+
 1. Go to **Authentication** → **Email** (or **Providers** → **Email**)
 2. You can keep the default Supabase email service or configure your own SMTP server
 3. Default setup allows unlimited emails for development
@@ -34,6 +36,7 @@ This creates/updates the `user_wallets` and `wallet_transactions` tables with pr
 ## User Flow
 
 ### Registration
+
 1. User visits `/auth` page
 2. Clicks "Register" tab
 3. Enters display name, email, and password
@@ -43,12 +46,14 @@ This creates/updates the `user_wallets` and `wallet_transactions` tables with pr
 5. User receives confirmation email (if email verification enabled)
 
 ### Login
+
 1. User visits `/auth` page
 2. Enters email and password
 3. Upon successful authentication, redirected to home page
 4. Wallet balance loads automatically
 
 ### Logout
+
 1. Click "Logout" button in top right of home page
 2. User session is cleared
 3. Redirected to auth page
@@ -122,20 +127,24 @@ Response:
 ## Troubleshooting
 
 ### "Wallet not found" Error
+
 - Ensure SQL migration was run to create `user_wallets` table
 - Verify foreign key constraint exists: `user_id uuid references auth.users(id)`
 
 ### Login Not Working
+
 - Check browser console for error messages
 - Verify SUPABASE_ANON_KEY is correct in `.env.local`
 - Ensure Email provider is enabled in Supabase dashboard
 
 ### Bearer Token Errors
+
 - Verify session is active (check browser localStorage: `supabase.auth.token`)
 - Clear browser cache and reload
 - Try logging out and logging back in
 
 ### Wallet Not Displaying
+
 - Ensure Bearer token is being sent with request
 - Check Network tab in DevTools to see auth headers
 - Verify user_id matches between `auth.users` and `user_wallets`
