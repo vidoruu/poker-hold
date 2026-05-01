@@ -1,0 +1,103 @@
+/\*\*
+
+- CHIP SYSTEM INTEGRATION GUIDE
+-
+- This document describes how chips are managed across poker and blackjack games.
+-
+- ## Architecture
+-
+- The chip system is universal for both poker and blackjack:
+- - Location: src/lib/chip-system.ts
+- - Starting chips: 1000 per player
+- - Buy-in amount: 1000 chips
+- - Database: Supabase player_chips table (or in-memory store)
+-
+- ## Flow for Poker
+-
+- 1.  Player joins poker room via `/api/room/join` (src/app/api/room/join/route.ts)
+- 2.  poker-engine.ts initializes player with STARTING_STACK = 1000 chips
+- 3.  Player can place bets, which deduct from their stack
+- 4.  When hand ends, winners' stacks increase, losers' decrease
+- 5.  If a player runs out of chips, they can buy-in again (future feature)
+-
+- ## Flow for Blackjack
+-
+- 1.  Player joins blackjack room via `/api/blackjack/room/[roomCode]/join`
+- (src/app/api/blackjack/room/[roomCode]/join/route.ts)
+- 2.  blackjack-engine.ts initializes player with STARTING_CHIPS = 1000
+- 3.  Player places bet in betting phase (chips deducted from chipStack)
+- 4.  After hand, payouts calculated and chips returned/increased
+- 5.  Player can buy-in again if chips run out
+-
+- ## Database Tables
+-
+- ### player_chips (Universal)
+- - session_id: Player's session identifier
+- - game_type: 'poker' or 'blackjack'
+- - room_code: Room identifier
+- - chip_balance: Current chip count
+- - buy_in_amount: Amount per buy-in
+- - total_buy_ins: Number of times player has bought in
+- - joined_at: Timestamp when player joined
+- - updated_at: Last update timestamp
+-
+- ### poker_tables
+- - room_code: Room identifier (primary key)
+- - state: Full game state (JSONB)
+- - updated_at: Last update
+-
+- ### blackjack_tables
+- - room_code: Room identifier (primary key)
+- - state: Full game state (JSONB)
+- - updated_at: Last update
+-
+- ## Local Storage
+-
+- - holdem_session_id: Player's unique session ID
+- - holdem_player_name: Player's display name
+-
+- ## Constants
+-
+- From src/lib/constants.ts:
+- - APP_LIMITS.MAX_PLAYERS: 6
+- - APP_LIMITS.STARTING_STACK: 1000 (used by poker)
+-
+- From src/lib/chip-system.ts:
+- - STARTING_CHIPS: 1000
+- - BUY_IN_AMOUNT: 1000
+-
+- ## API Endpoints
+-
+- ### Poker
+- - POST /api/room/join - Join a poker room
+- - POST /api/room/[roomCode]/action - Perform action (fold, call, raise, etc)
+- - GET /api/lobbies - List available poker rooms
+-
+- ### Blackjack
+- - GET /api/blackjack/room/[roomCode] - Get table state
+- - POST /api/blackjack/room/[roomCode]/join - Join table
+- - POST /api/blackjack/room/[roomCode]/action - Perform action (hit, stand, place_bet, leave)
+-
+- ## Features Implemented
+-
+- ✅ Universal chip system for both games
+- ✅ 1000 starting chips per player
+- ✅ Buy-in logic (foundation laid, can be expanded)
+- ✅ 4-deck blackjack with multiplayer support (up to 6 players)
+- ✅ Chip balance tracking
+- ✅ Database schema for storing player chips
+- ✅ Game selection in home lobby (Poker vs Blackjack)
+- ✅ Session persistence via localStorage
+-
+- ## Future Enhancements
+-
+- - [ ] Explicit buy-in button when player runs out of chips
+- - [ ] Chip leaderboard showing all-time statistics
+- - [ ] Cash-out system to track winnings over time
+- - [ ] Chip transfer between players
+- - [ ] Tournament mode with elimination
+- - [ ] Player rankings and statistics
+- - [ ] Persistent chip storage across Vercel deployments (currently uses in-memory store)
+        \*/
+
+export const CHIP_SYSTEM_VERSION = "1.0.0";

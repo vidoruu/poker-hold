@@ -32,6 +32,7 @@ function ensureSessionId() {
 export function HomeLobby() {
   const [name, setName] = useState("");
   const [roomCode, setRoomCode] = useState("");
+  const [gameType, setGameType] = useState<"poker" | "blackjack">("poker");
   const [lobbies, setLobbies] = useState<LobbySummary[]>([]);
   const [loadingLobbies, setLoadingLobbies] = useState(true);
   const router = useRouter();
@@ -55,18 +56,23 @@ export function HomeLobby() {
     return `${days}d ago`;
   }
 
-  function joinRoom(targetRoomCode: string) {
+  function joinRoom(targetRoomCode: string, selectedGameType: "poker" | "blackjack" = gameType) {
     const safeName = name.trim().slice(0, 24) || "Player";
     const safeRoom = sanitizeRoomCode(targetRoomCode);
 
     ensureSessionId();
     localStorage.setItem("holdem_player_name", safeName);
-    router.push(`/table/${safeRoom}`);
+    
+    if (selectedGameType === "blackjack") {
+      router.push(`/blackjack/${safeRoom}`);
+    } else {
+      router.push(`/table/${safeRoom}`);
+    }
   }
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    joinRoom(roomCode);
+    joinRoom(roomCode, gameType);
   }
 
   useEffect(() => {
@@ -118,6 +124,34 @@ export function HomeLobby() {
                 placeholder="e.g. Veer"
                 className="w-full rounded-xl border border-white/15 bg-black/30 px-4 py-3 text-white outline-none ring-emerald-400/40 transition focus:ring"
               />
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-slate-200">Game Type</span>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setGameType("poker")}
+                  className={`flex-1 rounded-xl px-4 py-3 font-semibold transition ${
+                    gameType === "poker"
+                      ? "bg-emerald-500 text-black"
+                      : "border border-white/15 bg-black/30 text-white hover:bg-black/50"
+                  }`}
+                >
+                  Poker
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGameType("blackjack")}
+                  className={`flex-1 rounded-xl px-4 py-3 font-semibold transition ${
+                    gameType === "blackjack"
+                      ? "bg-emerald-500 text-black"
+                      : "border border-white/15 bg-black/30 text-white hover:bg-black/50"
+                  }`}
+                >
+                  Blackjack
+                </button>
+              </div>
             </label>
 
             <label className="block">
