@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BlackjackTableState } from "@/lib/blackjack-types";
 import { useWallet } from "@/lib/client/use-wallet";
@@ -48,31 +48,11 @@ export function BlackjackTableClient({ roomCode }: BlackjackTableClientProps) {
     setPlayerName(getPlayerName());
   }, []);
 
-  // Fetch room state
-  const fetchState = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/blackjack/room/${roomCode}`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setState(data.state);
-        setError("");
-      } else {
-        setError("Failed to fetch table state");
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error fetching state");
-    } finally {
-      setLoading(false);
-    }
-  }, [roomCode]);
-
-  // Join table
+  // Join table (creates room if needed)
   useEffect(() => {
     if (!sessionId || !playerName) return;
+
+    let mounted = true;
 
     const join = async () => {
       try {
@@ -92,25 +72,56 @@ export function BlackjackTableClient({ roomCode }: BlackjackTableClientProps) {
         }
 
         const data = await response.json();
-        setState(data.state);
+        if (mounted) {
+          setState(data.state);
+          setError("");
+          setLoading(false);
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error joining table");
-      } finally {
-        setLoading(false);
+        if (mounted) {
+          setError(err instanceof Error ? err.message : "Error joining table");
+          setLoading(false);
+        }
       }
     };
 
     join();
+
+    return () => {
+      mounted = false;
+    };
   }, [roomCode, sessionId, playerName]);
 
-  // Poll for updates
+  // Poll for updates after joining
   useEffect(() => {
-    const interval = setInterval(() => {
-      fetchState();
-    }, 1000);
+    if (!state) return;
 
-    return () => clearInterval(interval);
-  }, [fetchState]);
+    let mounted = true;
+
+    const fetchState = async () => {
+      try {
+        const response = await fetch(`/api/blackjack/room/${roomCode}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (response.ok && mounted) {
+          const data = await response.json();
+          setState(data.state);
+          setError("");
+        }
+      } catch (err) {
+        // Silent fail on poll - don't set error
+        console.error("Failed to fetch state update:", err);
+      }
+    };
+
+    const interval = setInterval(fetchState, 1000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [roomCode, state]);
 
   // Place bet
   const handlePlaceBet = async () => {
