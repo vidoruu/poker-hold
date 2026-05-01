@@ -11,6 +11,18 @@ interface Params {
   params: Promise<{ roomCode: string }>;
 }
 
+function isPokerState(state: unknown): state is TableState {
+  if (typeof state !== "object" || state === null) {
+    return false;
+  }
+  // Blackjack states have gameType property set to "blackjack"
+  const stateObj = state as Record<string, unknown>;
+  if ("gameType" in stateObj && stateObj.gameType === "blackjack") {
+    return false;
+  }
+  return true;
+}
+
 export async function GET(_request: Request, context: Params) {
   try {
     const { roomCode: roomCodeParam } = await context.params;
@@ -18,7 +30,7 @@ export async function GET(_request: Request, context: Params) {
 
     if (!hasSupabaseServerConfig()) {
       const state = getMemoryRoomStore().get(roomCode);
-      if (!state) {
+      if (!state || !isPokerState(state)) {
         return NextResponse.json({ error: "Room not found." }, { status: 404 });
       }
       return NextResponse.json({ state });

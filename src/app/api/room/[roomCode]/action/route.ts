@@ -13,6 +13,18 @@ interface ActionBody {
   amount?: number;
 }
 
+function isPokerState(state: unknown): state is TableState {
+  if (typeof state !== "object" || state === null) {
+    return false;
+  }
+  // Blackjack states have gameType property set to "blackjack"
+  const stateObj = state as Record<string, unknown>;
+  if ("gameType" in stateObj && stateObj.gameType === "blackjack") {
+    return false;
+  }
+  return true;
+}
+
 interface Params {
   params: Promise<{ roomCode: string }>;
 }
@@ -38,6 +50,13 @@ export async function POST(request: Request, context: Params) {
       const existing = roomStore.get(roomCode);
       if (!existing) {
         return NextResponse.json({ error: "Room not found." }, { status: 404 });
+      }
+
+      if (!isPokerState(existing)) {
+        return NextResponse.json(
+          { error: "This room is not a poker room." },
+          { status: 400 },
+        );
       }
 
       const nextState = applyAction(existing, sessionId, action, body.amount ?? 0);

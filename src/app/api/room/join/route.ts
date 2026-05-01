@@ -13,6 +13,18 @@ interface JoinBody {
   name?: string;
 }
 
+function isPokerState(state: unknown): state is TableState {
+  if (typeof state !== "object" || state === null) {
+    return false;
+  }
+  // Blackjack states have gameType property set to "blackjack"
+  const stateObj = state as Record<string, unknown>;
+  if ("gameType" in stateObj && stateObj.gameType === "blackjack") {
+    return false;
+  }
+  return true;
+}
+
 async function loadRoom(roomCode: string) {
   if (!hasSupabaseServerConfig()) {
     return getMemoryRoomStore().get(roomCode) ?? null;
@@ -67,6 +79,14 @@ export async function POST(request: Request) {
     let roomState = await loadRoom(roomCode);
     if (!roomState) {
       roomState = createInitialState(roomCode);
+    }
+
+    // Ensure we only have poker states
+    if (!isPokerState(roomState)) {
+      return NextResponse.json(
+        { error: "This room is not a poker room." },
+        { status: 400 },
+      );
     }
 
     const updated = joinTable(roomState, sessionId, name);
