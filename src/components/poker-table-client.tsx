@@ -236,22 +236,38 @@ export function PokerTableClient({ roomCode }: { roomCode: string }) {
 
     async function join() {
       setError("");
-      const res = await fetch("/api/room/join", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roomCode, sessionId: sid, name }),
-      });
+      try {
+        const res = await fetch("/api/room/join", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ roomCode, sessionId: sid, name }),
+        });
 
-      const data = (await res.json()) as { state?: TableState; error?: string };
-      if (!res.ok || data.error || !data.state) {
-        setError(data.error ?? "Could not join room.");
-        return;
+        let data;
+        try {
+          data = (await res.json()) as { state?: TableState; error?: string };
+        } catch {
+          console.error("Failed to parse response:", res.status, res.statusText);
+          setError(`Server error: ${res.status} ${res.statusText}`);
+          return;
+        }
+
+        if (!res.ok || data.error || !data.state) {
+          const errorMsg = data.error ?? "Could not join room.";
+          console.error("Join failed:", errorMsg);
+          setError(errorMsg);
+          return;
+        }
+
+        setState(data.state);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Could not join room.";
+        console.error("Join error:", msg);
+        setError(msg);
       }
-
-      setState(data.state);
     }
 
-    join().catch(() => setError("Could not join room."));
+    join();
   }, [roomCode]);
 
   useEffect(() => {
