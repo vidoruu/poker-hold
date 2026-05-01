@@ -62,11 +62,12 @@ export function useWallet(userId: string): WalletDisplay {
         } else {
           throw new Error("Failed to fetch wallet");
         }
-      } catch (err) {
+      } catch {
+        // Set wallet to default balance, don't show error
         setWallet({
           walletBalance: 10000,
           loading: false,
-          error: err instanceof Error ? err.message : "Error fetching wallet",
+          error: null,
         });
       }
     };

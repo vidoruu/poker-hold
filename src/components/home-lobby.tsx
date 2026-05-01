@@ -25,6 +25,20 @@ export function HomeLobby() {
   const wallet = useWallet(user?.id ?? "");
   const router = useRouter();
 
+  // Auto-fill display name from signup metadata
+  useEffect(() => {
+    if (user?.user_metadata?.display_name && !name) {
+      setName(user.user_metadata.display_name);
+    }
+  }, [user, name]);
+
+  // Redirect to auth if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push("/auth");
+    }
+  }, [isAuthenticated, router]);
+
   const buttonLabel = useMemo(() => (roomCode.trim() ? "Join Room" : "Create & Join"), [roomCode]);
 
   function formatAgo(isoDate: string) {
@@ -99,37 +113,30 @@ export function HomeLobby() {
     };
   }, []);
 
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-4 py-8 sm:px-8">
       {/* Auth Header */}
       <div className="mb-6 flex justify-between items-center">
         <div>
-          {isAuthenticated && user ? (
+          {user ? (
             <p className="text-sm text-slate-300">
               Welcome, <span className="font-semibold text-emerald-400">{user.email}</span>
             </p>
-          ) : (
-            <p className="text-sm text-slate-300">
-              <button
-                onClick={() => router.push("/auth")}
-                className="font-semibold text-emerald-400 hover:text-emerald-300"
-              >
-                Sign in to play
-              </button>
-            </p>
-          )}
+          ) : null}
         </div>
-        {isAuthenticated && (
-          <button
-            onClick={async () => {
-              await signOut();
-              router.push("/auth");
-            }}
-            className="rounded-lg bg-red-600/20 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-600/40 transition"
-          >
-            Logout
-          </button>
-        )}
+        <button
+          onClick={async () => {
+            await signOut();
+            router.push("/auth");
+          }}
+          className="rounded-lg bg-red-600/20 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-600/40 transition"
+        >
+          Logout
+        </button>
       </div>
 
       {/* Wallet Balance Header */}
