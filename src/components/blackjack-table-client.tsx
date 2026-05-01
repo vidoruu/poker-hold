@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { BlackjackTableState } from "@/lib/blackjack-types";
+import { useWallet } from "@/lib/client/use-wallet";
 
 interface BlackjackTableClientProps {
   roomCode: string;
@@ -38,6 +39,7 @@ export function BlackjackTableClient({ roomCode }: BlackjackTableClientProps) {
   const [loading, setLoading] = useState(true);
   const [sessionId, setSessionId] = useState("");
   const [playerName, setPlayerName] = useState("");
+  const wallet = useWallet(sessionId);
   const router = useRouter();
 
   // Initialize session and player info
@@ -220,10 +222,15 @@ export function BlackjackTableClient({ roomCode }: BlackjackTableClientProps) {
   return (
     <div className="w-full h-screen bg-green-800 p-8">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold text-white">Blackjack</h1>
-          <div className="text-white">
+        {/* Header with Wallet */}
+        <div className="flex justify-between items-start mb-8">
+          <div>
+            <h1 className="text-4xl font-bold text-white">Blackjack</h1>
+            <div className="mt-2 rounded-xl border border-emerald-400/30 bg-emerald-950/40 p-3 text-white">
+              <p className="text-sm">Wallet Balance: <span className="font-bold text-emerald-300">{wallet.walletBalance.toLocaleString()} chips</span></p>
+            </div>
+          </div>
+          <div className="text-white text-right">
             <p className="text-sm">Room: {roomCode}</p>
             <p className="text-sm">Hand #{state.handNumber}</p>
             <p className="text-lg font-bold">Phase: {state.phase}</p>

@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LobbySummary } from "@/lib/poker-types";
+import { useWallet } from "@/lib/client/use-wallet";
 
 function randomRoomCode() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
@@ -35,9 +36,16 @@ export function HomeLobby() {
   const [gameType, setGameType] = useState<"poker" | "blackjack">("poker");
   const [lobbies, setLobbies] = useState<LobbySummary[]>([]);
   const [loadingLobbies, setLoadingLobbies] = useState(true);
+  const [sessionId, setSessionId] = useState("");
+  const wallet = useWallet(sessionId);
   const router = useRouter();
 
   const buttonLabel = useMemo(() => (roomCode.trim() ? "Join Room" : "Create & Join"), [roomCode]);
+
+  // Initialize session
+  useEffect(() => {
+    setSessionId(ensureSessionId());
+  }, []);
 
   function formatAgo(isoDate: string) {
     const diffMs = Date.now() - new Date(isoDate).getTime();
@@ -109,6 +117,19 @@ export function HomeLobby() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-4 py-8 sm:px-8">
+      {/* Wallet Balance Header */}
+      <div className="mb-6 flex justify-between items-center rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-4">
+        <div>
+          <p className="text-sm text-slate-300">Your Wallet Balance</p>
+          <p className="text-3xl font-bold text-emerald-400">
+            {wallet.loading ? "..." : wallet.walletBalance.toLocaleString()} chips
+          </p>
+        </div>
+        {wallet.error && (
+          <p className="text-xs text-red-400">{wallet.error}</p>
+        )}
+      </div>
+
       <section className="grid w-full gap-6 lg:grid-cols-[1fr_1.25fr]">
         <div className="rounded-3xl border border-white/10 bg-slate-950/60 p-8 shadow-2xl">
           <h2 className="text-2xl font-semibold text-white">Enter the table</h2>

@@ -117,4 +117,68 @@ begin
   end if;
 end $$;
 
+-- User Wallets - persistent chip storage
+create table if not exists public.user_wallets (
+  id uuid primary key default gen_random_uuid(),
+  session_id text not null unique,
+  display_name text not null,
+  wallet_balance integer not null default 10000,
+  total_deposited integer not null default 10000,
+  total_withdrawn integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.user_wallets enable row level security;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'user_wallets'
+      and policyname = 'public_read_user_wallets'
+  ) then
+    create policy public_read_user_wallets
+      on public.user_wallets
+      for select
+      to anon, authenticated
+      using (true);
+  end if;
+end $$;
+
+-- Wallet Transactions - audit log
+create table if not exists public.wallet_transactions (
+  id uuid primary key default gen_random_uuid(),
+  session_id text not null,
+  transaction_type text not null,
+  game_type text not null,
+  room_code text not null,
+  amount integer not null,
+  balance_before integer not null,
+  balance_after integer not null,
+  description text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.wallet_transactions enable row level security;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'wallet_transactions'
+      and policyname = 'public_read_wallet_transactions'
+  ) then
+    create policy public_read_wallet_transactions
+      on public.wallet_transactions
+      for select
+      to anon, authenticated
+      using (true);
+  end if;
+end $$;
+
 -- Writes are handled by Next.js API routes via service role key.
