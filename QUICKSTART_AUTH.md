@@ -3,6 +3,7 @@
 ## 🎯 TL;DR - What You Need to Do
 
 1. **Execute Database Migration** (1 minute)
+
    ```
    Supabase Dashboard → SQL Editor
    → Paste supabase-schema.sql
@@ -10,6 +11,7 @@
    ```
 
 2. **Test Locally** (2 minutes)
+
    ```bash
    npm run dev
    # Visit http://localhost:3000/auth
@@ -84,7 +86,7 @@ npm run dev
 # Terminal
 git push origin main
 
-# That's it! 
+# That's it!
 # Vercel auto-deploys to your production URL
 ```
 
@@ -93,6 +95,7 @@ git push origin main
 ## User Flow
 
 ### New User
+
 ```
 http://localhost:3000
   ↓
@@ -110,6 +113,7 @@ Home page with wallet + play buttons
 ```
 
 ### Returning User
+
 ```
 http://localhost:3000
   ↓
@@ -142,21 +146,28 @@ Run through each to verify everything works:
 ## Common Issues
 
 ### "Wallet not found" Error
+
 **Solution:** Execute the database migration from Step 1
 
 ### "Missing authorization" on home page
-**Solution:** 
+
+**Solution:**
+
 - Clear browser cache (Ctrl+Shift+Delete)
 - Log out and log back in
 
 ### Registration fails silently
+
 **Solution:**
+
 - Check browser console for errors (F12)
 - Verify email isn't already registered
 - Try different email
 
 ### Email verification emails not arriving
-**Solution:** 
+
+**Solution:**
+
 - Check spam folder
 - Or disable email verification:
   - Supabase → Authentication → Providers → Email
@@ -166,13 +177,13 @@ Run through each to verify everything works:
 
 ## What's Different From Before?
 
-| Before | After |
-|--------|-------|
+| Before                       | After                            |
+| ---------------------------- | -------------------------------- |
 | Session ID generated locally | User account created in Supabase |
-| Wallet was temporary | Wallet persists permanently |
-| No login required | Login required |
-| Each game = new chips | Wallet shared across all games |
-| No user identity | Email identity |
+| Wallet was temporary         | Wallet persists permanently      |
+| No login required            | Login required                   |
+| Each game = new chips        | Wallet shared across all games   |
+| No user identity             | Email identity                   |
 
 ---
 

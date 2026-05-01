@@ -139,13 +139,48 @@ begin
     from pg_policies
     where schemaname = 'public'
       and tablename = 'user_wallets'
-      and policyname = 'public_read_user_wallets'
+      and policyname = 'user_wallets_select_own'
   ) then
-    create policy public_read_user_wallets
+    create policy user_wallets_select_own
       on public.user_wallets
       for select
-      to anon, authenticated
-      using (true);
+      to authenticated
+      using (auth.uid() = user_id);
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'user_wallets'
+      and policyname = 'user_wallets_insert_own'
+  ) then
+    create policy user_wallets_insert_own
+      on public.user_wallets
+      for insert
+      to authenticated
+      with check (auth.uid() = user_id);
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'user_wallets'
+      and policyname = 'user_wallets_update_own'
+  ) then
+    create policy user_wallets_update_own
+      on public.user_wallets
+      for update
+      to authenticated
+      using (auth.uid() = user_id)
+      with check (auth.uid() = user_id);
   end if;
 end $$;
 
@@ -173,14 +208,81 @@ begin
     from pg_policies
     where schemaname = 'public'
       and tablename = 'wallet_transactions'
-      and policyname = 'public_read_wallet_transactions'
+      and policyname = 'wallet_transactions_select_own'
   ) then
-    create policy public_read_wallet_transactions
+    create policy wallet_transactions_select_own
       on public.wallet_transactions
+      for select
+      to authenticated
+      using (auth.uid() = user_id);
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'wallet_transactions'
+      and policyname = 'wallet_transactions_insert_own'
+  ) then
+    create policy wallet_transactions_insert_own
+      on public.wallet_transactions
+      for insert
+      to authenticated
+      with check (auth.uid() = user_id);
+  end if;
+end $$;
+
+-- Writes are handled by Next.js API routes via service role key.
+
+-- User Profiles - public profile information
+create table if not exists public.user_profiles (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null unique references auth.users(id) on delete cascade,
+  display_name text not null,
+  avatar_url text,
+  bio text,
+  total_games_played integer not null default 0,
+  total_winnings integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.user_profiles enable row level security;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'user_profiles'
+      and policyname = 'user_profiles_public_read'
+  ) then
+    create policy user_profiles_public_read
+      on public.user_profiles
       for select
       to anon, authenticated
       using (true);
   end if;
 end $$;
 
--- Writes are handled by Next.js API routes via service role key.
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'user_profiles'
+      and policyname = 'user_profiles_update_own'
+  ) then
+    create policy user_profiles_update_own
+      on public.user_profiles
+      for update
+      to authenticated
+      using (auth.uid() = user_id)
+      with check (auth.uid() = user_id);
+  end if;
+end $$;
