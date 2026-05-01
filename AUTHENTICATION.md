@@ -1,11 +1,13 @@
 # Authentication Implementation Summary
 
 ## Overview
+
 Your poker web app now has a **complete authentication system** powered by **Supabase Auth**. Users must create an account and log in before playing. Their wallet is securely linked to their user account.
 
 ## What Was Implemented
 
 ### 1. Authentication Context (`src/lib/client/auth-context.tsx`)
+
 - React Context for managing global authentication state
 - Tracks user, session, and loading state
 - Provides `signUp()`, `signIn()`, and `signOut()` methods
@@ -13,6 +15,7 @@ Your poker web app now has a **complete authentication system** powered by **Sup
 - Real-time auth state changes via Supabase listener
 
 ### 2. Auth Page (`src/app/auth/page.tsx`)
+
 - **Register Tab**: Create new account with email, password, and display name
 - **Login Tab**: Sign in with email and password
 - Automatic redirect if already logged in
@@ -20,11 +23,13 @@ Your poker web app now has a **complete authentication system** powered by **Sup
 - Beautiful UI with tailwind styling
 
 ### 3. Authentication Provider Integration
+
 - Wrapped entire app with `AuthProvider` in `src/app/layout.tsx`
 - Auth state available to all components via `useAuth()` hook
 - Session tokens persist in browser
 
 ### 4. Updated Wallet System
+
 - Wallets now linked to Supabase `auth.users` via `user_id` foreign key
 - `/api/wallet` GET endpoint requires Bearer token
 - `/api/wallet` POST endpoint creates wallet for new user
@@ -36,18 +41,21 @@ Your poker web app now has a **complete authentication system** powered by **Sup
   - `total_deposited` and `total_withdrawn` (lifetime stats)
 
 ### 5. Updated Home Page
+
 - Shows logged-in user's email
 - "Logout" button in header
 - Redirects unauthenticated users to `/auth`
 - Wallet balance displays for authenticated users
 
 ### 6. Bearer Token Authentication
+
 - All wallet API calls now use Bearer token from session
 - Token stored securely in Supabase session storage
 - Token refreshed automatically on page load
 - Server-side verification of token with Supabase Admin API
 
 ### 7. Database Schema Updates
+
 - Modified `user_wallets` table:
   - Added `user_id` UUID foreign key → `auth.users(id)`
   - Made `session_id` optional (deprecated)
@@ -58,6 +66,7 @@ Your poker web app now has a **complete authentication system** powered by **Sup
 ## File Changes
 
 ### New Files
+
 ```
 src/lib/client/auth-context.tsx      - Auth context provider
 src/app/auth/page.tsx                 - Login/register page
@@ -67,6 +76,7 @@ AUTH_CHANGES.md                        - Changes summary
 ```
 
 ### Modified Files
+
 ```
 src/app/layout.tsx                     - Added AuthProvider wrapper
 src/app/api/wallet/route.ts            - Updated for user-based wallets
@@ -78,6 +88,7 @@ supabase-schema.sql                    - Added user_id foreign keys
 ## How It Works
 
 ### User Registration Flow
+
 1. User visits `/auth`
 2. Enters: Display Name, Email, Password
 3. System creates:
@@ -87,6 +98,7 @@ supabase-schema.sql                    - Added user_id foreign keys
 5. Redirected to login
 
 ### User Login Flow
+
 1. User enters email & password
 2. Supabase Auth validates credentials
 3. Session token stored in browser
@@ -94,6 +106,7 @@ supabase-schema.sql                    - Added user_id foreign keys
 5. Wallet loads via Bearer token auth
 
 ### Wallet Access Flow
+
 1. User makes wallet request
 2. Browser sends: `Authorization: Bearer <token>`
 3. Backend verifies token with Supabase Auth
@@ -104,6 +117,7 @@ supabase-schema.sql                    - Added user_id foreign keys
 ## Environment Variables
 
 Already configured in `.env.local`:
+
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://onbwmddfqpccxsrpoode.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_ZCciKZWEh_hDVQqPoEhLJg_zhCFR7Ib
@@ -115,20 +129,25 @@ No additional setup needed.
 ## Next Steps to Fully Enable
 
 ### 1. Execute Database Migration (Required)
+
 ```bash
 # Supabase Dashboard → SQL Editor
 # 1. Copy entire supabase-schema.sql from project root
 # 2. Paste into SQL Editor
 # 3. Click "Run"
 ```
+
 This creates the foreign key relationships between `user_wallets` and `auth.users`.
 
 ### 2. Verify Email Provider (Already enabled)
+
 Go to Supabase Dashboard:
+
 - **Authentication** → **Providers**
 - Confirm **Email** is enabled (default)
 
 ### 3. Test Locally
+
 ```bash
 npm run dev
 # Visit http://localhost:3000/auth
@@ -138,6 +157,7 @@ npm run dev
 ```
 
 ### 4. Deploy to Vercel
+
 ```bash
 git push origin main
 # Vercel auto-deploys
@@ -147,6 +167,7 @@ git push origin main
 ## API Changes
 
 ### GET /api/wallet
+
 ```
 Before:
 GET /api/wallet?sessionId=abc123
@@ -168,6 +189,7 @@ Response:
 ```
 
 ### POST /api/wallet (New)
+
 ```
 POST /api/wallet
 Content-Type: application/json
@@ -186,6 +208,7 @@ Response (201):
 ## Breaking Changes
 
 ⚠️ **Important**: Old session-based wallet access no longer works
+
 - `GET /api/wallet?sessionId=...` → No longer supported
 - Must use Bearer token authentication
 - Old localStorage session IDs are ignored
