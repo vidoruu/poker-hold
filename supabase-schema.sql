@@ -10,279 +10,242 @@ ALTER TABLE PUBLIC.POKER_TABLES ENABLE ROW LEVEL SECURITY;
 
 DO $$
 
-begin
-  if not exists (
-    select 1
-    from pg_policies
-    where schemaname = 'public'
-      and tablename = 'poker_tables'
-      and policyname = 'public_read_poker_tables'
-  ) then
-    create policy public_read_poker_tables
-      on public.poker_tables
-      for select
-      to anon, authenticated
-      using (true);
-  end if;
-end $$;
+BEGIN
+  IF NOT EXISTS (
+    SELECT
+      1
+    FROM
+      PG_POLICIES
+    WHERE
+      SCHEMANAME = 'public'
+      AND TABLENAME = 'poker_tables'
+      AND POLICYNAME = 'public_read_poker_tables'
+  ) THEN
+    CREATE POLICY PUBLIC_READ_POKER_TABLES ON PUBLIC.POKER_TABLES FOR
+    SELECT
+      TO ANON,
+      AUTHENTICATED
+      USING (TRUE);
+  END IF;
+END $$;
+ 
 
 -- Blackjack tables
-create table if not exists public.blackjack_tables (
-  room_code text primary key,
-  state jsonb not null,
-  updated_at timestamptz not null default now()
-);
-
-alter table public.blackjack_tables enable row level security;
-
-do $$
-begin
-  if not exists (
-    select 1
-    from pg_policies
-    where schemaname = 'public'
-      and tablename = 'blackjack_tables'
-      and policyname = 'public_read_blackjack_tables'
-  ) then
-    create policy public_read_blackjack_tables
-      on public.blackjack_tables
-      for select
-      to anon, authenticated
-      using (true);
-  end if;
-end $$;
+CREATE TABLE IF NOT EXISTS PUBLIC.BLACKJACK_TABLES ( ROOM_CODE TEXT PRIMARY KEY, STATE JSONB NOT NULL, UPDATED_AT TIMESTAMPTZ NOT NULL DEFAULT NOW() );
+ALTER TABLE PUBLIC.BLACKJACK_TABLES ENABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT
+      1
+    FROM
+      PG_POLICIES
+    WHERE
+      SCHEMANAME = 'public'
+      AND TABLENAME = 'blackjack_tables'
+      AND POLICYNAME = 'public_read_blackjack_tables'
+  ) THEN
+    CREATE POLICY PUBLIC_READ_BLACKJACK_TABLES ON PUBLIC.BLACKJACK_TABLES FOR
+    SELECT
+      TO ANON,
+      AUTHENTICATED
+      USING (TRUE);
+  END IF;
+END $$;
+ 
 
 -- Player chip balances - universal system for poker and blackjack
-create table if not exists public.player_chips (
-  id uuid primary key default gen_random_uuid(),
-  session_id text not null,
-  game_type text not null,
-  room_code text not null,
-  chip_balance integer not null default 1000,
-  buy_in_amount integer not null default 1000,
-  total_buy_ins integer not null default 1,
-  joined_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique(session_id, room_code, game_type)
-);
-
-alter table public.player_chips enable row level security;
-
-do $$
-begin
-  if not exists (
-    select 1
-    from pg_policies
-    where schemaname = 'public'
-      and tablename = 'player_chips'
-      and policyname = 'public_read_player_chips'
-  ) then
-    create policy public_read_player_chips
-      on public.player_chips
-      for select
-      to anon, authenticated
-      using (true);
-  end if;
-end $$;
+CREATE TABLE IF NOT EXISTS PUBLIC.PLAYER_CHIPS ( ID UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(), SESSION_ID TEXT NOT NULL, GAME_TYPE TEXT NOT NULL, ROOM_CODE TEXT NOT NULL, CHIP_BALANCE INTEGER NOT NULL DEFAULT 1000, BUY_IN_AMOUNT INTEGER NOT NULL DEFAULT 1000, TOTAL_BUY_INS INTEGER NOT NULL DEFAULT 1, JOINED_AT TIMESTAMPTZ NOT NULL DEFAULT NOW(), UPDATED_AT TIMESTAMPTZ NOT NULL DEFAULT NOW(), UNIQUE(SESSION_ID, ROOM_CODE, GAME_TYPE) );
+ALTER TABLE PUBLIC.PLAYER_CHIPS ENABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT
+      1
+    FROM
+      PG_POLICIES
+    WHERE
+      SCHEMANAME = 'public'
+      AND TABLENAME = 'player_chips'
+      AND POLICYNAME = 'public_read_player_chips'
+  ) THEN
+    CREATE POLICY PUBLIC_READ_PLAYER_CHIPS ON PUBLIC.PLAYER_CHIPS FOR
+    SELECT
+      TO ANON,
+      AUTHENTICATED
+      USING (TRUE);
+  END IF;
+END $$;
+ 
 
 -- Lobbies view for faster querying
-create table if not exists public.game_lobbies (
-  id uuid primary key default gen_random_uuid(),
-  room_code text not null unique,
-  game_type text not null,
-  host_name text not null,
-  player_count integer not null default 0,
-  hand_number integer not null default 1,
-  phase text not null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-alter table public.game_lobbies enable row level security;
-
-do $$
-begin
-  if not exists (
-    select 1
-    from pg_policies
-    where schemaname = 'public'
-      and tablename = 'game_lobbies'
-      and policyname = 'public_read_game_lobbies'
-  ) then
-    create policy public_read_game_lobbies
-      on public.game_lobbies
-      for select
-      to anon, authenticated
-      using (true);
-  end if;
-end $$;
+CREATE TABLE IF NOT EXISTS PUBLIC.GAME_LOBBIES ( ID UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(), ROOM_CODE TEXT NOT NULL UNIQUE, GAME_TYPE TEXT NOT NULL, HOST_NAME TEXT NOT NULL, PLAYER_COUNT INTEGER NOT NULL DEFAULT 0, HAND_NUMBER INTEGER NOT NULL DEFAULT 1, PHASE TEXT NOT NULL, CREATED_AT TIMESTAMPTZ NOT NULL DEFAULT NOW(), UPDATED_AT TIMESTAMPTZ NOT NULL DEFAULT NOW() );
+ALTER TABLE PUBLIC.GAME_LOBBIES ENABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT
+      1
+    FROM
+      PG_POLICIES
+    WHERE
+      SCHEMANAME = 'public'
+      AND TABLENAME = 'game_lobbies'
+      AND POLICYNAME = 'public_read_game_lobbies'
+  ) THEN
+    CREATE POLICY PUBLIC_READ_GAME_LOBBIES ON PUBLIC.GAME_LOBBIES FOR
+    SELECT
+      TO ANON,
+      AUTHENTICATED
+      USING (TRUE);
+  END IF;
+END $$;
+ 
 
 -- User Wallets - persistent chip storage
-create table if not exists public.user_wallets (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null unique references auth.users(id) on delete cascade,
-  session_id text,
-  display_name text not null,
-  wallet_balance integer not null default 10000,
-  total_deposited integer not null default 10000,
-  total_withdrawn integer not null default 0,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
+CREATE TABLE IF NOT EXISTS PUBLIC.USER_WALLETS ( ID UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(), USER_ID UUID NOT NULL UNIQUE REFERENCES AUTH.USERS(ID) ON DELETE CASCADE, SESSION_ID TEXT, DISPLAY_NAME TEXT NOT NULL, WALLET_BALANCE INTEGER NOT NULL DEFAULT 10000, TOTAL_DEPOSITED INTEGER NOT NULL DEFAULT 10000, TOTAL_WITHDRAWN INTEGER NOT NULL DEFAULT 0, CREATED_AT TIMESTAMPTZ NOT NULL DEFAULT NOW(), UPDATED_AT TIMESTAMPTZ NOT NULL DEFAULT NOW() );
+ALTER TABLE PUBLIC.USER_WALLETS ENABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT
+      1
+    FROM
+      PG_POLICIES
+    WHERE
+      SCHEMANAME = 'public'
+      AND TABLENAME = 'user_wallets'
+      AND POLICYNAME = 'user_wallets_select_own'
+  ) THEN
+    CREATE POLICY USER_WALLETS_SELECT_OWN ON PUBLIC.USER_WALLETS FOR
+    SELECT
+      TO AUTHENTICATED
+      USING (AUTH.UID() = USER_ID);
+  END IF;
+END $$;
 
-alter table public.user_wallets enable row level security;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT
+      1
+    FROM
+      PG_POLICIES
+    WHERE
+      SCHEMANAME = 'public'
+      AND TABLENAME = 'user_wallets'
+      AND POLICYNAME = 'user_wallets_insert_own'
+  ) THEN
+    CREATE POLICY USER_WALLETS_INSERT_OWN ON PUBLIC.USER_WALLETS FOR INSERT TO AUTHENTICATED WITH CHECK (
+      AUTH.UID() = USER_ID
+    );
+  END IF;
+END $$;
 
-do $$
-begin
-  if not exists (
-    select 1
-    from pg_policies
-    where schemaname = 'public'
-      and tablename = 'user_wallets'
-      and policyname = 'user_wallets_select_own'
-  ) then
-    create policy user_wallets_select_own
-      on public.user_wallets
-      for select
-      to authenticated
-      using (auth.uid() = user_id);
-  end if;
-end $$;
-
-do $$
-begin
-  if not exists (
-    select 1
-    from pg_policies
-    where schemaname = 'public'
-      and tablename = 'user_wallets'
-      and policyname = 'user_wallets_insert_own'
-  ) then
-    create policy user_wallets_insert_own
-      on public.user_wallets
-      for insert
-      to authenticated
-      with check (auth.uid() = user_id);
-  end if;
-end $$;
-
-do $$
-begin
-  if not exists (
-    select 1
-    from pg_policies
-    where schemaname = 'public'
-      and tablename = 'user_wallets'
-      and policyname = 'user_wallets_update_own'
-  ) then
-    create policy user_wallets_update_own
-      on public.user_wallets
-      for update
-      to authenticated
-      using (auth.uid() = user_id)
-      with check (auth.uid() = user_id);
-  end if;
-end $$;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT
+      1
+    FROM
+      PG_POLICIES
+    WHERE
+      SCHEMANAME = 'public'
+      AND TABLENAME = 'user_wallets'
+      AND POLICYNAME = 'user_wallets_update_own'
+  ) THEN
+    CREATE POLICY USER_WALLETS_UPDATE_OWN ON PUBLIC.USER_WALLETS FOR
+    UPDATE TO AUTHENTICATED USING (
+      AUTH.UID() = USER_ID
+    ) WITH CHECK (
+      AUTH.UID() = USER_ID
+    );
+  END IF;
+END $$;
+ 
 
 -- Wallet Transactions - audit log
-create table if not exists public.wallet_transactions (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  session_id text,
-  transaction_type text not null,
-  game_type text not null,
-  room_code text not null,
-  amount integer not null,
-  balance_before integer not null,
-  balance_after integer not null,
-  description text not null,
-  created_at timestamptz not null default now()
-);
+CREATE TABLE IF NOT EXISTS PUBLIC.WALLET_TRANSACTIONS ( ID UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(), USER_ID UUID NOT NULL REFERENCES AUTH.USERS(ID) ON DELETE CASCADE, SESSION_ID TEXT, TRANSACTION_TYPE TEXT NOT NULL, GAME_TYPE TEXT NOT NULL, ROOM_CODE TEXT NOT NULL, AMOUNT INTEGER NOT NULL, BALANCE_BEFORE INTEGER NOT NULL, BALANCE_AFTER INTEGER NOT NULL, DESCRIPTION TEXT NOT NULL, CREATED_AT TIMESTAMPTZ NOT NULL DEFAULT NOW() );
+ALTER TABLE PUBLIC.WALLET_TRANSACTIONS ENABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT
+      1
+    FROM
+      PG_POLICIES
+    WHERE
+      SCHEMANAME = 'public'
+      AND TABLENAME = 'wallet_transactions'
+      AND POLICYNAME = 'wallet_transactions_select_own'
+  ) THEN
+    CREATE POLICY WALLET_TRANSACTIONS_SELECT_OWN ON PUBLIC.WALLET_TRANSACTIONS FOR
+    SELECT
+      TO AUTHENTICATED
+      USING (AUTH.UID() = USER_ID);
+  END IF;
+END $$;
 
-alter table public.wallet_transactions enable row level security;
-
-do $$
-begin
-  if not exists (
-    select 1
-    from pg_policies
-    where schemaname = 'public'
-      and tablename = 'wallet_transactions'
-      and policyname = 'wallet_transactions_select_own'
-  ) then
-    create policy wallet_transactions_select_own
-      on public.wallet_transactions
-      for select
-      to authenticated
-      using (auth.uid() = user_id);
-  end if;
-end $$;
-
-do $$
-begin
-  if not exists (
-    select 1
-    from pg_policies
-    where schemaname = 'public'
-      and tablename = 'wallet_transactions'
-      and policyname = 'wallet_transactions_insert_own'
-  ) then
-    create policy wallet_transactions_insert_own
-      on public.wallet_transactions
-      for insert
-      to authenticated
-      with check (auth.uid() = user_id);
-  end if;
-end $$;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT
+      1
+    FROM
+      PG_POLICIES
+    WHERE
+      SCHEMANAME = 'public'
+      AND TABLENAME = 'wallet_transactions'
+      AND POLICYNAME = 'wallet_transactions_insert_own'
+  ) THEN
+    CREATE POLICY WALLET_TRANSACTIONS_INSERT_OWN ON PUBLIC.WALLET_TRANSACTIONS FOR INSERT TO AUTHENTICATED WITH CHECK (
+      AUTH.UID() = USER_ID
+    );
+  END IF;
+END $$;
+ 
 
 -- Writes are handled by Next.js API routes via service role key.
-
 -- User Profiles - public profile information
-create table if not exists public.user_profiles (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null unique references auth.users(id) on delete cascade,
-  display_name text not null,
-  avatar_url text,
-  bio text,
-  total_games_played integer not null default 0,
-  total_winnings integer not null default 0,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
+CREATE TABLE IF NOT EXISTS PUBLIC.USER_PROFILES ( ID UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(), USER_ID UUID NOT NULL UNIQUE REFERENCES AUTH.USERS(ID) ON DELETE CASCADE, DISPLAY_NAME TEXT NOT NULL, AVATAR_URL TEXT, BIO TEXT, TOTAL_GAMES_PLAYED INTEGER NOT NULL DEFAULT 0, TOTAL_WINNINGS INTEGER NOT NULL DEFAULT 0, CREATED_AT TIMESTAMPTZ NOT NULL DEFAULT NOW(), UPDATED_AT TIMESTAMPTZ NOT NULL DEFAULT NOW() );
+ALTER TABLE PUBLIC.USER_PROFILES ENABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT
+      1
+    FROM
+      PG_POLICIES
+    WHERE
+      SCHEMANAME = 'public'
+      AND TABLENAME = 'user_profiles'
+      AND POLICYNAME = 'user_profiles_public_read'
+  ) THEN
+    CREATE POLICY USER_PROFILES_PUBLIC_READ ON PUBLIC.USER_PROFILES FOR
+    SELECT
+      TO ANON,
+      AUTHENTICATED
+      USING (TRUE);
+  END IF;
+END $$;
 
-alter table public.user_profiles enable row level security;
-
-do $$
-begin
-  if not exists (
-    select 1
-    from pg_policies
-    where schemaname = 'public'
-      and tablename = 'user_profiles'
-      and policyname = 'user_profiles_public_read'
-  ) then
-    create policy user_profiles_public_read
-      on public.user_profiles
-      for select
-      to anon, authenticated
-      using (true);
-  end if;
-end $$;
-
-do $$
-begin
-  if not exists (
-    select 1
-    from pg_policies
-    where schemaname = 'public'
-      and tablename = 'user_profiles'
-      and policyname = 'user_profiles_update_own'
-  ) then
-    create policy user_profiles_update_own
-      on public.user_profiles
-      for update
-      to authenticated
-      using (auth.uid() = user_id)
-      with check (auth.uid() = user_id);
-  end if;
-end $$;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT
+      1
+    FROM
+      PG_POLICIES
+    WHERE
+      SCHEMANAME = 'public'
+      AND TABLENAME = 'user_profiles'
+      AND POLICYNAME = 'user_profiles_update_own'
+  ) THEN
+    CREATE POLICY user_profiles_update_own ON public.user_profiles FOR
+    UPDATE TO AUTHENTICATED USING (
+      auth.uid() = user_id
+    ) WITH CHECK (
+      auth.uid() = user_id
+    );
+  END IF;
+END $$;
