@@ -38,11 +38,25 @@ function sanitizeLegacyState(state: TableState) {
   return state;
 }
 
+/**
+ * Filter out non-poker states from the store
+ */
+function isPokerState(state: unknown): state is TableState {
+  if (typeof state !== "object" || state === null) {
+    return false;
+  }
+  const obj = state as Record<string, unknown>;
+  // Blackjack states have gameType === "blackjack"
+  // Poker states either don't have gameType or it's not set to "blackjack"
+  return obj.gameType !== "blackjack";
+}
+
 export async function GET() {
   try {
     if (!hasSupabaseServerConfig()) {
       const store = getMemoryRoomStore();
       const lobbies = [...store.values()]
+        .filter(isPokerState)
         .map((state) => sanitizeLegacyState(state))
         .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
         .slice(0, 25)
