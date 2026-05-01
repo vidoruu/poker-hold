@@ -4,6 +4,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { supabaseBrowser } from "./supabase-browser";
 
 export interface WalletDisplay {
   walletBalance: number;
@@ -11,7 +12,7 @@ export interface WalletDisplay {
   error: string | null;
 }
 
-export function useWallet(sessionId: string): WalletDisplay {
+export function useWallet(userId: string): WalletDisplay {
   const [wallet, setWallet] = useState<WalletDisplay>({
     walletBalance: 10000,
     loading: true,
@@ -19,18 +20,35 @@ export function useWallet(sessionId: string): WalletDisplay {
   });
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!userId || !supabaseBrowser) {
+      setWallet({
+        walletBalance: 10000,
+        loading: false,
+        error: null,
+      });
+      return;
+    }
 
     const fetchWallet = async () => {
       try {
-        const response = await fetch(
-          `/api/wallet?sessionId=${encodeURIComponent(sessionId)}`,
-        );
+        const {
+          data: { session },
+        } = await (supabaseBrowser!).auth.getSession();
+
+        if (!session?.access_token) {
+          throw new Error("No access token");
+        }
+
+        const response = await fetch("/api/wallet", {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
 
         if (response.ok) {
           const data = await response.json();
           setWallet({
-            walletBalance: data.wallet?.walletBalance || 10000,
+            walletBalance: data.wallet?.wallet_balance || 10000,
             loading: false,
             error: null,
           });
@@ -54,7 +72,12 @@ export function useWallet(sessionId: string): WalletDisplay {
     };
 
     fetchWallet();
-  }, [sessionId]);
+
+    // Refetch wallet every 10 seconds
+    const interval = setInterval(fetchWallet, 10000);
+    return () => clearInterval(interval);
+  }, [userId]);
 
   return wallet;
 }
+

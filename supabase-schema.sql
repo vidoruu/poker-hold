@@ -120,7 +120,8 @@ end $$;
 -- User Wallets - persistent chip storage
 create table if not exists public.user_wallets (
   id uuid primary key default gen_random_uuid(),
-  session_id text not null unique,
+  user_id uuid not null unique references auth.users(id) on delete cascade,
+  session_id text,
   display_name text not null,
   wallet_balance integer not null default 10000,
   total_deposited integer not null default 10000,
@@ -151,7 +152,8 @@ end $$;
 -- Wallet Transactions - audit log
 create table if not exists public.wallet_transactions (
   id uuid primary key default gen_random_uuid(),
-  session_id text not null,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  session_id text,
   transaction_type text not null,
   game_type text not null,
   room_code text not null,

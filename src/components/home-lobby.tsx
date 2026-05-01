@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LobbySummary } from "@/lib/poker-types";
 import { useWallet } from "@/lib/client/use-wallet";
+import { useAuth } from "@/lib/client/auth-context";
 
 function randomRoomCode() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
@@ -14,38 +15,17 @@ function sanitizeRoomCode(value: string) {
   return code.length >= 3 ? code : randomRoomCode();
 }
 
-function ensureSessionId() {
-  if (typeof window === "undefined") {
-    return "";
-  }
-
-  const key = "holdem_session_id";
-  const existing = localStorage.getItem(key);
-  if (existing) {
-    return existing;
-  }
-
-  const created = crypto.randomUUID();
-  localStorage.setItem(key, created);
-  return created;
-}
-
 export function HomeLobby() {
+  const { user, signOut, isAuthenticated } = useAuth();
   const [name, setName] = useState("");
   const [roomCode, setRoomCode] = useState("");
   const [gameType, setGameType] = useState<"poker" | "blackjack">("poker");
   const [lobbies, setLobbies] = useState<LobbySummary[]>([]);
   const [loadingLobbies, setLoadingLobbies] = useState(true);
-  const [sessionId, setSessionId] = useState("");
-  const wallet = useWallet(sessionId);
+  const wallet = useWallet(user?.id ?? "");
   const router = useRouter();
 
   const buttonLabel = useMemo(() => (roomCode.trim() ? "Join Room" : "Create & Join"), [roomCode]);
-
-  // Initialize session
-  useEffect(() => {
-    setSessionId(ensureSessionId());
-  }, []);
 
   function formatAgo(isoDate: string) {
     const diffMs = Date.now() - new Date(isoDate).getTime();
@@ -65,10 +45,14 @@ export function HomeLobby() {
   }
 
   function joinRoom(targetRoomCode: string, selectedGameType: "poker" | "blackjack" = gameType) {
-    const safeName = name.trim().slice(0, 24) || "Player";
+    if (!isAuthenticated) {
+      router.push("/auth");
+      return;
+    }
+
+    const safeName = name.trim().slice(0, 24) || user?.user_metadata?.display_name || "Player";
     const safeRoom = sanitizeRoomCode(targetRoomCode);
 
-    ensureSessionId();
     localStorage.setItem("holdem_player_name", safeName);
     
     if (selectedGameType === "blackjack") {
@@ -117,6 +101,37 @@ export function HomeLobby() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-4 py-8 sm:px-8">
+      {/* Auth Header */}
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          {isAuthenticated && user ? (
+            <p className="text-sm text-slate-300">
+              Welcome, <span className="font-semibold text-emerald-400">{user.email}</span>
+            </p>
+          ) : (
+            <p className="text-sm text-slate-300">
+              <button
+                onClick={() => router.push("/auth")}
+                className="font-semibold text-emerald-400 hover:text-emerald-300"
+              >
+                Sign in to play
+              </button>
+            </p>
+          )}
+        </div>
+        {isAuthenticated && (
+          <button
+            onClick={async () => {
+              await signOut();
+              router.push("/auth");
+            }}
+            className="rounded-lg bg-red-600/20 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-600/40 transition"
+          >
+            Logout
+          </button>
+        )}
+      </div>
+
       {/* Wallet Balance Header */}
       <div className="mb-6 flex justify-between items-center rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-4">
         <div>
